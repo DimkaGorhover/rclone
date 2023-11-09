@@ -2902,6 +2902,9 @@ func s3Connection(ctx context.Context, opt *Options, client *http.Client) (*s3.S
 
 	// first provider to supply a credential set "wins"
 	providers := []credentials.Provider{
+
+		newAWSSigningHelperRemoteCredProvider(def.Config, def.Handlers),
+
 		// use static credentials if they're present (checked by provider)
 		&credentials.StaticProvider{Value: v},
 
@@ -2930,18 +2933,19 @@ func s3Connection(ctx context.Context, opt *Options, client *http.Client) (*s3.S
 	}
 	cred := credentials.NewChainCredentials(providers)
 
-	switch {
-	case opt.EnvAuth:
-		// No need for empty checks if "env_auth" is true
-	case v.AccessKeyID == "" && v.SecretAccessKey == "":
-		// if no access key/secret and iam is explicitly disabled then fall back to anon interaction
-		cred = credentials.AnonymousCredentials
-		fs.Debugf(nil, "Using anonymous credentials - did you mean to set env_auth=true?")
-	case v.AccessKeyID == "":
-		return nil, nil, errors.New("access_key_id not found")
-	case v.SecretAccessKey == "":
-		return nil, nil, errors.New("secret_access_key not found")
-	}
+	//switch {
+	//case opt.EnvAuth:
+	//	// No need for empty checks if "env_auth" is true
+	//case v.AccessKeyID == "" && v.SecretAccessKey == "":
+	//	// if no access key/secret and iam is explicitly disabled then fall back to anon interaction
+	//	// FIXME: WTF ?! WHY DOES IT RESET CREDENTIALS ?!
+	//	cred = credentials.AnonymousCredentials
+	//	fs.Debugf(nil, "Using anonymous credentials - did you mean to set env_auth=true?")
+	//case v.AccessKeyID == "":
+	//	return nil, nil, errors.New("access_key_id not found")
+	//case v.SecretAccessKey == "":
+	//	return nil, nil, errors.New("secret_access_key not found")
+	//}
 
 	if opt.Region == "" {
 		opt.Region = "us-east-1"
